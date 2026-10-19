@@ -1885,6 +1885,162 @@ window.addEventListener('beforeunload', () => {
 // Игра не запускает цикл до нажатия «Войти в комнату».
 resizeCanvas();
 render();
+
+/* ===== РАБОЧИЙ МИКРОФОН ===== */
+
+const micButton = document.getElementById('toggle-mic-btn');
+
+let localAudioStream = null;
+let micEnabled = false;
+const audioCalls = {};
+const remoteAudioElements = {};
+
+function showMicError(message) {
+    alert('Микрофон: ' + message);
+}
+
+async function enableMicrophone() {
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+        showMicError(
+            'Браузер не разрешает доступ. Открой игру через HTTPS в Chrome или Safari.'
+        );
+        return;
+    }
+
+    try {
+        localAudioStream =
+            await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: false
+            });
+
+        micEnabled = true;
+
+        localAudioStream.getAudioTracks().forEach(track => {
+            track.enabled = true;
+        });
+
+        micButton.classList.add('active');
+        micButton.innerHTML =
+            '<i class="fas fa-microphone"></i>';
+
+        micButton.title = 'Выключить микрофон';
+
+        // Начинаем голосовые соединения с подключёнными игроками.
+        if (peer && peer.open) {
+            Object.keys(connections).forEach(peerId => {
+                startAudioCall(peerId);
+            });
+        }
+    } catch (error) {
+        console.error('Ошибка микрофона:', error);
+
+        const messages = {
+            NotAllowedError:
+                'Доступ запрещён. Разреши микрофон для сайта в настройках браузера.',
+            NotFoundError:
+                'Микрофон не найден.',
+            NotReadableError:
+                'Микрофон занят другим приложением или недоступен.'
+        };
+
+        showMicError(
+            messages[error.name] ||
+            'Не удалось включить микрофон. Ошибка: ' +
+            error.name
+        );
+    }
+}
+
+function disableMicrophone() {
+    micEnabled = false;
+
+    if (localAudioStream) {
+        localAudioStream.getTracks().forEach(track => {
+            track.stop();
+        });
+        localAudioStream = null;
+    }
+
+    micButton.classList.remove('active');
+    micButton.innerHTML =
+        '<i class="fas fa-microphone-slash"></i>';
+    micButton.title = 'Включить микрофон';
+}
+
+function startAudioCall(peerId) {
+    if (!micEnabled || !localAudioStream || !peer) return;
+    if (!connections[peerId]) return;
+
+    const existing = audioCalls[peerId];
+
+    if (existing && existing.open) return;
+
+    const call = peer.call(peerId, localAudioStream);
+
+    if (!call) return;
+
+    audioCalls[peerId] = call;
+    setupAudioCall(call);
+}
+
+function setupAudioCall(call) {
+    call.on('stream', stream => {
+        let audio = remoteAudioElements[call.peer];
+
+        if (!audio) {
+            audio = document.createElement('audio');
+            audio.autoplay = true;
+            audio.playsInline = true;
+            audio.style.display = 'none';
+
+            document.body.appendChild(audio);
+            remoteAudioElements[call.peer] = audio;
+        }
+
+        audio.srcObject = stream;
+
+        audio.play().catch(error => {
+            console.warn('Не удалось воспроизвести голос:', error);
+        });
+    });
+
+    call.on('close', () => {
+        delete audioCalls[call.peer];
+
+        const audio = remoteAudioElements[call.peer];
+        if (audio) {
+            audio.pause();
+            audio.srcObject = null;
+            audio.remove();
+            delete remoteAudioElements[call.peer];
+        }
+    });
+
+    call.on('error', error => {
+        console.error('Ошибка голосового соединения:', error);
+    });
+}
+
+micButton.addEventListener('click', async () => {
+    if (micEnabled) {
+        disableMicrophone();
+    } else {
+        await enableMicrophone();
+    }
+});
+
+/* Принимать голосовые вызовы других игроков. */
+function installAudioCallHandler() {
+    if (!peer) return;
+
+    peer.on('call', call => {
+        call.answer(micEnabled ? localAudioStream : undefined);
+        setupAudioCall(call);
+    });
+}
+
 </script>
 </body>
 </html>
