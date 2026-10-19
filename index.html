@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Уютная RPG Комната - Онлайн</title>
+  
+  <!-- Иконки FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Библиотека PeerJS для бесплатного P2P мультиплеера на GitHub Pages -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+   /* ==========================================
+   УЮТНЫЙ ДЕРЕВЯННЫЙ СТИЛЬ (WOODEN & COZY RPG)
+   ========================================== */
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  margin: 0;
+  padding: 0;
+  touch-action: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #120b07; /* Тёмный деревянный подтон */
+  font-family: 'Segoe UI', 'Trebuchet MS', Geneva, Verdana, sans-serif;
+  color: #fff3e0;
+}
+
+/* --- Стартовый экран --- */
+#start-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, #2e1d13 0%, #120b07 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.start-card {
+  background: #2a1810;
+  border: 4px solid #5c3a21;
+  outline: 2px solid #1a0f0a;
+  border-radius: 16px;
+  padding: 30px 25px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  position: relative;
+}
+
+.start-card h1 {
+  font-size: 22px;
+  color: #f4c430; /* Тёплый янтарь */
+  text-shadow: 1px 2px 4px #000;
+  margin-bottom: 8px;
+}
+
+.start-card p {
+  font-size: 13px;
+  color: #d7ccc8;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 12px;
+  color: #ffcc80;
+  margin-bottom: 6px;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px #000;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid #5c3a21;
+  background: #1a0f0a;
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+.input-group input:focus {
+  border-color: #f4c430;
+}
+
+.color-picker {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.color-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #1a0f0a;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+}
+
+.color-btn.selected {
+  border-color: #fff;
+  transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(255, 204, 128, 0.8);
+}
+
+.btn-start {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid #3d2314;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #8d5b40 0%, #5c3a21 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 1px 1px 2px #000;
+  transition: transform 0.1s, background 0.2s;
+}
+
+.btn-start:active {
+  transform: scale(0.98);
+  background: linear-gradient(135deg, #5c3a21 0%, #3d2314 100%);
+}
+
+/* --- Игровое пространство --- */
+#game-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Верхняя панель --- */
+.top-bar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.top-bar-left, .top-bar-right {
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #2a1810;
+  border: 2px solid #5c3a21;
+  color: #ffcc80;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: background 0.2s, transform 0.1s;
+}
+
+.icon-btn.active {
+  background: #2e7d32;
+  border-color: #81c784;
+  color: #fff;
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+.room-badge {
+  background: #2a1810;
+  border: 2px solid #5c3a21;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #ffcc80;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* --- Чат --- */
+#chat-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: min(320px, calc(100% - 40px));
+  height: 260px;
+  background: rgba(42, 24, 16, 0.95);
+  border: 3px solid #5c3a21;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+  transition: opacity 0.2s, transform 0.2s;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+#chat-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.chat-header {
+  padding: 10px 14px;
+  background: #1a0f0a;
+  border-bottom: 2px solid #5c3a21;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: bold;
+  color: #f4c430;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.chat-msg {
+  background: rgba(26, 15, 10, 0.6);
+  border: 1px solid rgba(92, 58, 33, 0.5);
+  padding: 6px 10px;
+  border-radius: 8px;
+  word-break: break-word;
+  color: #fff3e0;
+}
+
+.chat-msg .author {
+  font-weight: bold;
+  color: #f4c430;
+  margin-right: 4px;
+}
+
+.chat-input-area {
+  padding: 8px;
+  display: flex;
+  gap: 6px;
+  background: #1a0f0a;
+  border-top: 2px solid #5c3a21;
+  border-radius: 0 0 12px 12px;
+}
+
+.chat-input-area input {
+  flex: 1;
+  background: #2a1810;
+  border: 1px solid #5c3a21;
+  padding: 8px 12px;
+  border-radius: 20px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+
+.chat-send-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #8d5b40;
+  border: 1px solid #ffcc80;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* --- Виртуальный Джойстик --- */
+#joystick-zone {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  width: 120px;
+  height: 120px;
+  z-index: 10;
+  display: none;
+}
+
+.joystick-base {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(42, 24, 16, 0.5);
+  border: 2px solid rgba(255, 204, 128, 0.4);
+  position: relative;
+  backdrop-filter: blur(2px);
+}
+
+.joystick-stick {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #8d5b40;
+  border: 2px solid #ffcc80;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+}
+  </style>
+</head>
+<body>
+
+  <!-- Стартовый экран -->
+  <div id="start-screen">
+    <div class="start-card">
+      <h1>Уютная RPG Комната</h1>
+      <p>Создай персонажа и заходи в гости!</p>
+      
+      <div class="input-group">
+        <label for="player-name">Ваше Имя:</label>
+        <input type="text" id="player-name" placeholder="Введите имя..." maxlength="12" value="Гость">
+      </div>
+
+      <div class="input-group">
+        <label>Цвет кружка:</label>
+        <div class="color-picker">
+          <button class="color-btn selected" data-color="#ff4757" style="background:#ff4757"></button>
+          <button class="color-btn" data-color="#2ed573" style="background:#2ed573"></button>
+          <button class="color-btn" data-color="#1e90ff" style="background:#1e90ff"></button>
+          <button class="color-btn" data-color="#ffa502" style="background:#ffa502"></button>
+          <button class="color-btn" data-color="#9b59b6" style="background:#9b59b6"></button>
+        </div>
+      </div>
+
+      <button class="btn-start" id="start-btn">Войти в комнату</button>
+    </div>
+  </div>
+
+  <!-- Игровой контейнер -->
+  <div id="game-container">
+    <canvas id="canvas"></canvas>
+
+    <!-- Верхние кнопки -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="icon-btn" id="toggle-chat-btn" title="Чат"><i class="fas fa-comment"></i></button>
+        <button class="icon-btn" id="toggle-mic-btn" title="Микрофон"><i class="fas fa-microphone-slash"></i></button>
+      </div>
+      <div class="top-bar-right">
+        <div class="room-badge">
+          <i class="fas fa-users" style="color:#06d6a0"></i>
+          <span id="player-count">1</span>
+        </div>
+        <button class="icon-btn" id="copy-link-btn" title="Скопировать ссылку для друга"><i class="fas fa-link"></i></button>
+      </div>
+    </div>
+
+    <!-- Чат -->
+    <div id="chat-overlay">
+      <div class="chat-header">
+        <span>Чат комнаты</span>
+        <i class="fas fa-times" id="close-chat-btn" style="cursor:pointer"></i>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Напишите сообщение..." maxlength="60">
+        <button class="chat-send-btn" id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+
+    <!-- Виртуальный джойстик для мобилок -->
+    <div id="joystick-zone">
+      <div class="joystick-base">
+        <div class="joystick-stick" id="joystick-stick"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И НАСТРОЙКИ
+    // ==========================================
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      document.getElementById('joystick-zone').style.display = 'block';
+    }
+
+    // Параметры комнаты
+    const ROOM_WIDTH = 800;
+    const ROOM_HEIGHT = 600;
+
+    // Ресурсы изображений
+    const images = {
+      shkaf: new Image(),
+      divan: new Image(),
+      kover: new Image()
+    };
+
+    images.shkaf.src = 'shkaf.png';
+    images.divan.src = 'divan.png';
+    images.kover.src = 'kover.png';
+
+    // Заглушки, если картинки не найдутся
+    const loadedImages = { shkaf: false, divan: false, kover: false };
+    images.shkaf.onload = () => loadedImages.shkaf = true;
+    images.divan.onload = () => loadedImages.divan = true;
+    images.kover.onload = () => loadedImages.kover = true;
+
+    // Локальный игрок
+    let localPlayer = {
+      id: Math.random().toString(36).substring(2, 9),
+      name: "Гость",
+      color: "#ff4757",
+      x: ROOM_WIDTH / 2,
+      y: ROOM_HEIGHT / 2 + 50,
+      radius: 18,
+      speed: 3.5,
+      chatBubble: null,
+      chatBubbleTimer: null,
+      isSpeaking: false
+    };
+
+    // Сетевые игроки
+    const remotePlayers = {};
+
+    // Мебель и коллизии
+    const furniture = [
+      // 1 Ковер по середине
+      { type: 'kover', x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2, w: 220, h: 150, rotation: 0, solid: false },
+      
+      // 2 Дивана (верхний и перевернутый нижний)
+      { type: 'divan', x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2 - 120, w: 140, h: 60, rotation: 0, solid: true },
+      { type: 'divan', x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2 + 120, w: 140, h: 60, rotation: Math.PI, solid: true },
+
+      // 4 Шкафа по углам (нижние перевернуты)
+      { type: 'shkaf', x: 90, y: 90, w: 70, h: 100, rotation: 0, solid: true },
+      { type: 'shkaf', x: ROOM_WIDTH - 90, y: 90, w: 70, h: 100, rotation: 0, solid: true },
+      { type: 'shkaf', x: 90, y: ROOM_HEIGHT - 90, w: 70, h: 100, rotation: Math.PI, solid: true },
+      { type: 'shkaf', x: ROOM_WIDTH - 90, y: ROOM_HEIGHT - 90, w: 70, h: 100, rotation: Math.PI, solid: true }
+    ];
+
+    // ==========================================
+    // УПРАВЛЕНИЕ (WASD, Сенсор, Джойстик)
+    // ==========================================
+    const keys = {};
+    let touchTarget = null;
+
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    // Виртуальный джойстик
+    const joystickZone = document.getElementById('joystick-zone');
+    const joystickStick = document.getElementById('joystick-stick');
+    let joystickActive = false;
+    let joystickVector = { x: 0, y: 0 };
+
+    joystickZone.addEventListener('touchstart', e => {
+      e.preventDefault();
+      joystickActive = true;
+      updateJoystick(e.touches[0]);
+    });
+
+    window.addEventListener('touchmove', e => {
+      if (joystickActive) {
+        updateJoystick(e.touches[0]);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', e => {
+      if (joystickActive) {
+        joystickActive = false;
+        joystickVector = { x: 0, y: 0 };
+        joystickStick.style.transform = `translate(-50%, -50%)`;
+      }
+    });
+
+    function updateJoystick(touch) {
+      const rect = joystickZone.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      let dx = touch.clientX - centerX;
+      let dy = touch.clientY - centerY;
+      let dist = Math.hypot(dx, dy);
+      let maxDist = rect.width / 2;
+
+      if (dist > maxDist) {
+        dx = (dx / dist) * maxDist;
+        dy = (dy / dist) * maxDist;
+      }
+
+      joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      joystickVector = { x: dx / maxDist, y: dy / maxDist };
+    }
+
+    // Тап по холсту для перемещения
+    canvas.addEventListener('pointerdown', e => {
+      if (e.target === canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        touchTarget = {
+          x: (e.clientX - rect.left) * scaleX - (canvas.width - ROOM_WIDTH) / 2,
+          y: (e.clientY - rect.top) * scaleY - (canvas.height - ROOM_HEIGHT) / 2
+        };
+      }
+    });
+
+    // ==========================================
+    // ЛОГИКА ДВИЖЕНИЯ И КОЛЛИЗИЙ
+    // ==========================================
+    function movePlayer() {
+      let dx = 0;
+      let dy = 0;
+
+      // Клавиатура
+      if (keys['KeyW'] || keys['ArrowUp']) dy -= 1;
+      if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
+      if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
+      if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
+
+      // Джойстик
+      if (joystickActive) {
+        dx = joystickVector.x;
+        dy = joystickVector.y;
+        touchTarget = null;
+      }
+
+      // Если есть направление
+      if (dx !== 0 || dy !== 0) {
+        touchTarget = null;
+        let len = Math.hypot(dx, dy);
+        if (len > 1) { dx /= len; dy /= len; }
+        
+        tryMove(dx * localPlayer.speed, dy * localPlayer.speed);
+      } else if (touchTarget) {
+        // Движение к точке тапа
+        let tDx = touchTarget.x - localPlayer.x;
+        let tDy = touchTarget.y - localPlayer.y;
+        let dist = Math.hypot(tDx, tDy);
+
+        if (dist < localPlayer.speed) {
+          localPlayer.x = touchTarget.x;
+          localPlayer.y = touchTarget.y;
+          touchTarget = null;
+        } else {
+          tryMove((tDx / dist) * localPlayer.speed, (tDy / dist) * localPlayer.speed);
+        }
+      }
+    }
+
+    function tryMove(vx, vy) {
+      // Движение по X
+      let newX = localPlayer.x + vx;
+      if (!checkCollisions(newX, localPlayer.y)) {
+        localPlayer.x = newX;
+      }
+
+      // Движение по Y
+      let newY = localPlayer.y + vy;
+      if (!checkCollisions(localPlayer.x, newY)) {
+        localPlayer.y = newY;
+      }
+
+      // Ограничение границами комнаты
+      const wallPadding = 45;
+      localPlayer.x = Math.max(wallPadding + localPlayer.radius, Math.min(ROOM_WIDTH - wallPadding - localPlayer.radius, localPlayer.x));
+      localPlayer.y = Math.max(wallPadding + localPlayer.radius, Math.min(ROOM_HEIGHT - wallPadding - localPlayer.radius, localPlayer.y));
+
+      // Отправляем координаты по сети
+      if (window.peerManager) {
+        window.peerManager.broadcast({
+          type: 'move',
+          x: localPlayer.x,
+          y: localPlayer.y
+        });
+      }
+    }
+
+    function checkCollisions(x, y) {
+      for (let item of furniture) {
+        if (!item.solid) continue;
+
+        let hw = item.w / 2;
+        let hh = item.h / 2;
+
+        // Bounding Box
+        if (x + localPlayer.radius > item.x - hw &&
+            x - localPlayer.radius < item.x + hw &&
+            y + localPlayer.radius > item.y - hh &&
+            y - localPlayer.radius < item.y + hh) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // ==========================================
+    // ОТРИСОВКА (CANVAS)
+    // ==========================================
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Центрирование комнаты
+      ctx.save();
+      const offsetX = (canvas.width - ROOM_WIDTH) / 2;
+      const offsetY = (canvas.height - ROOM_HEIGHT) / 2;
+      ctx.translate(offsetX, offsetY);
+
+      // 1. Пол и стены комнаты
+      ctx.fillStyle = '#2c1d36'; // Стены
+      ctx.fillRect(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
+
+      ctx.fillStyle = '#4a3356'; // Пол
+      ctx.fillRect(35, 35, ROOM_WIDTH - 70, ROOM_HEIGHT - 70);
+
+      // Плинтус/Узор пола
+      ctx.strokeStyle = '#382544';
+      ctx.lineWidth = 2;
+      for (let i = 50; i < ROOM_WIDTH - 50; i += 40) {
+        ctx.beginPath(); ctx.moveTo(i, 35); ctx.lineTo(i, ROOM_HEIGHT - 35); ctx.stroke();
+      }
+
+      // 2. Отрисовка Мебели
+      furniture.forEach(item => {
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.rotate(item.rotation);
+
+        if (item.type === 'kover') {
+          if (loadedImages.kover) {
+            ctx.drawImage(images.kover, -item.w/2, -item.h/2, item.w, item.h);
+          } else {
+            // Заглушка ковра
+            ctx.fillStyle = '#8a2be2';
+            ctx.fillRect(-item.w/2, -item.h/2, item.w, item.h);
+            ctx.strokeStyle = '#ffd166';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(-item.w/2 + 5, -item.h/2 + 5, item.w - 10, item.h - 10);
+          }
+        } else if (item.type === 'divan') {
+          if (loadedImages.divan) {
+            ctx.drawImage(images.divan, -item.w/2, -item.h/2, item.w, item.h);
+          } else {
+            // Заглушка дивана
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath(); ctx.roundRect(-item.w/2, -item.h/2, item.w, item.h, 10); ctx.fill();
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(-item.w/2 + 10, -item.h/2 + 5, item.w - 20, 15);
+          }
+        } else if (item.type === 'shkaf') {
+          if (loadedImages.shkaf) {
+            ctx.drawImage(images.shkaf, -item.w/2, -item.h/2, item.w, item.h);
+          } else {
+            // Заглушка шкафа
+            ctx.fillStyle = '#d35400';
+            ctx.fillRect(-item.w/2, -item.h/2, item.w, item.h);
+            ctx.fillStyle = '#a04000';
+            ctx.fillRect(-item.w/2 + 4, -item.h/2 + 4, item.w - 8, 12);
+          }
+        }
+        ctx.restore();
+      });
+
+      // 3. Отрисовка локального игрока и сетевых игроков
+      Object.values(remotePlayers).forEach(drawPlayer);
+      drawPlayer(localPlayer);
+
+      // 4. Атмосферное освещение (Свечи/Лампы в углах)
+      const lights = [
+        { x: 50, y: 50 }, { x: ROOM_WIDTH - 50, y: 50 },
+        { x: 50, y: ROOM_HEIGHT - 50 }, { x: ROOM_WIDTH - 50, y: ROOM_HEIGHT - 50 }
+      ];
+
+      lights.forEach(l => {
+        let grad = ctx.createRadialGradient(l.x, l.y, 5, l.x, l.y, 120);
+        grad.addColorStop(0, 'rgba(255, 209, 102, 0.25)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(l.x, l.y, 120, 0, Math.PI * 2); ctx.fill();
+      });
+
+      ctx.restore();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function drawPlayer(p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+
+      // Анимация микрофона (Звуковые волны)
+      if (p.isSpeaking) {
+        ctx.strokeStyle = '#06d6a0';
+        ctx.lineWidth = 2;
+        let waveSize = p.radius + 6 + Math.sin(Date.now() / 100) * 4;
+        ctx.beginPath(); ctx.arc(0, 0, waveSize, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      // Тень
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(0, p.radius - 2, p.radius, p.radius * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Кружок-персонаж (без глаз)
+      let grad = ctx.createRadialGradient(-4, -4, 2, 0, 0, p.radius);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.3, p.color);
+      grad.addColorStop(1, adjustColor(p.color, -40));
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Никнейм
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 4;
+      ctx.fillText(p.name, 0, -p.radius - 8);
+
+      // Иконка разговорника
+      if (p.isSpeaking) {
+        ctx.fillStyle = '#06d6a0';
+        ctx.font = '10px FontAwesome';
+        ctx.fillText('\uf130', 0, -p.radius - 22);
+      }
+
+      // Спич-бабл (Облачко с сообщением)
+      if (p.chatBubble) {
+        ctx.font = '11px sans-serif';
+        let textWidth = ctx.measureText(p.chatBubble).width;
+        let bgW = textWidth + 16;
+        let bgH = 22;
+        let bgY = -p.radius - 35;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.beginPath();
+        ctx.roundRect(-bgW / 2, bgY, bgW, bgH, 10);
+        ctx.fill();
+
+        ctx.fillStyle = '#15101e';
+        ctx.shadowBlur = 0;
+        ctx.fillText(p.chatBubble, 0, bgY + 15);
+      }
+
+      ctx.restore();
+    }
+
+    function adjustColor(col, amt) {
+      let num = parseInt(col.slice(1), 16);
+      let r = (num >> 16) + amt;
+      let g = ((num >> 8) & 0x00FF) + amt;
+      let b = (num & 0x000255) + amt;
+      return '#' + (0x1000000 + (r<255?r<0?0:r:255)*0x10000 + (g<255?g<0?0:g:255)*0x100 + (b<255?b<0?0:b:255)).toString(16).slice(1);
+    }
+
+    function gameLoop() {
+      movePlayer();
+      render();
+    }
+
+    // ==========================================
+    // СТАРТОВЫЙ ЭКРАН И ЧАТ
+    // ==========================================
+    const colorBtns = document.querySelectorAll('.color-btn');
+    colorBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        localPlayer.color = btn.dataset.color;
+      });
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      const inputName = document.getElementById('player-name').value.trim();
+      if (inputName) localPlayer.name = inputName;
+
+      document.getElementById('start-screen').style.display = 'none';
+      
+      // Инициализация Онлайн Сети PeerJS
+      initPeerNetwork();
+    });
+
+    // Управление интерфейсом чата
+    const chatOverlay = document.getElementById('chat-overlay');
+    const toggleChatBtn = document.getElementById('toggle-chat-btn');
+    const closeChatBtn = document.getElementById('close-chat-btn');
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+
+    toggleChatBtn.addEventListener('click', () => chatOverlay.classList.toggle('visible'));
+    closeChatBtn.addEventListener('click', () => chatOverlay.classList.remove('visible'));
+
+    function sendChatMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      // Отобразить локально
+      addChatMessage(localPlayer.name, text);
+      showSpeechBubble(localPlayer, text);
+
+      // Разослать по сети
+      if (window.peerManager) {
+        window.peerManager.broadcast({
+          type: 'chat',
+          text: text
+        });
+      }
+
+      chatInput.value = '';
+    }
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendChatMessage();
+    });
+
+    function addChatMessage(author, text) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'chat-msg';
+      msgDiv.innerHTML = `<span class="author">${author}:</span> ${text}`;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showSpeechBubble(player, text) {
+      player.chatBubble = text;
+      if (player.chatBubbleTimer) clearTimeout(player.chatBubbleTimer);
+      player.chatBubbleTimer = setTimeout(() => {
+        player.chatBubble = null;
+      }, 4000);
+    }
+
+    // Кнопка скопировать ссылку
+    document.getElementById('copy-link-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Ссылка на комнату скопирована! Отправь её другу.');
+    });
+
+    // ==========================================
+    // ГОЛОСОВОЙ ЧАТ И P2P МУЛЬТИПЛЕЕР (PEERJS)
+    // ==========================================
+    let localStream = null;
+    let micActive = false;
+    const toggleMicBtn = document.getElementById('toggle-mic-btn');
+
+    toggleMicBtn.addEventListener('click', async () => {
+      if (!micActive) {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          micActive = true;
+          toggleMicBtn.classList.add('active');
+          toggleMicBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+          localPlayer.isSpeaking = true;
+
+          // Подключить голосовой поток к PeerJS
+          if (window.peerManager) window.peerManager.bindVoiceStream(localStream);
+
+        } catch (err) {
+          alert('Не удалось получить доступ к микрофону: ' + err.message);
+        }
+      } else {
+        if (localStream) {
+          localStream.getTracks().forEach(t => t.stop());
+        }
+        micActive = false;
+        toggleMicBtn.classList.remove('active');
+        toggleMicBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+        localPlayer.isSpeaking = false;
+      }
+    });
+
+    function initPeerNetwork() {
+      let roomHash = window.location.hash.substring(1);
+      if (!roomHash) {
+        roomHash = 'rpg-' + Math.random().toString(36).substring(2, 8);
+        window.location.hash = roomHash;
+      }
+
+      const peer = new Peer(localPlayer.id + '-' + roomHash, { debug: 1 });
+
+      const connections = {};
+
+      peer.on('open', id => {
+        console.log('Подключено к PeerServer. Мой ID:', id);
+      });
+
+      peer.on('connection', conn => {
+        setupConnection(conn);
+      });
+
+      peer.on('call', call => {
+        call.answer(localStream);
+        call.on('stream', remoteStream => {
+          attachProximityAudio(call.peer, remoteStream);
+        });
+      });
+
+      function setupConnection(conn) {
+        connections[conn.peer] = conn;
+
+        conn.on('open', () => {
+          // Отправить свои данные
+          conn.send({
+            type: 'init',
+            player: localPlayer
+          });
+        });
+
+        conn.on('data', data => {
+          handleNetworkMessage(conn.peer, data);
+        });
+
+        conn.on('close', () => {
+          delete remotePlayers[conn.peer];
+          delete connections[conn.peer];
+          updatePlayerCount();
+        });
+      }
+
+      function handleNetworkMessage(peerId, data) {
+        if (data.type === 'init') {
+          remotePlayers[peerId] = data.player;
+          updatePlayerCount();
+        } else if (data.type === 'move') {
+          if (remotePlayers[peerId]) {
+            remotePlayers[peerId].x = data.x;
+            remotePlayers[peerId].y = data.y;
+          }
+        } else if (data.type === 'chat') {
+          if (remotePlayers[peerId]) {
+            addChatMessage(remotePlayers[peerId].name, data.text);
+            showSpeechBubble(remotePlayers[peerId], data.text);
+          }
+        }
+      }
+
+      function updatePlayerCount() {
+        document.getElementById('player-count').innerText = Object.keys(remotePlayers).length + 1;
+      }
+
+      window.peerManager = {
+        broadcast: function(data) {
+          Object.values(connections).forEach(conn => conn.send(data));
+        },
+        bindVoiceStream: function(stream) {
+          Object.keys(connections).forEach(peerId => {
+            const call = peer.call(peerId, stream);
+            call.on('stream', remoteStream => attachProximityAudio(peerId, remoteStream));
+          });
+        }
+      };
+    }
+
+    function attachProximityAudio(peerId, stream) {
+      let audio = new Audio();
+      audio.srcObject = stream;
+      audio.autoplay = true;
+
+      // Пространственный звук: обновление громкости от расстояния
+      setInterval(() => {
+        if (remotePlayers[peerId]) {
+          let dist = Math.hypot(remotePlayers[peerId].x - localPlayer.x, remotePlayers[peerId].y - localPlayer.y);
+          let maxDist = 500;
+          let vol = Math.max(0, 1 - (dist / maxDist));
+          audio.volume = vol;
+        }
+      }, 200);
+    }
+
+    // Старт игрового цикла
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
