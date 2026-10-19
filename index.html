@@ -1,924 +1,1890 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Уютная RPG Комната - Онлайн</title>
-  
-  <!-- Иконки FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Библиотека PeerJS для бесплатного P2P мультиплеера на GitHub Pages -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#120b07">
+<title>Уютная RPG Комната — Онлайн</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-      margin: 0;
-      padding: 0;
-      touch-action: none;
-    }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #0d0a14;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #fff;
-    }
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
 
-    /* Стартовый экран */
-    #start-screen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle at center, #231b2e 0%, #0c0812 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 20px;
-    }
-
-    .start-card {
-      background: rgba(35, 27, 46, 0.85);
-      border: 2px solid #5a4270;
-      border-radius: 20px;
-      padding: 30px 25px;
-      width: 100%;
-      max-width: 360px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      backdrop-filter: blur(10px);
-      text-align: center;
-    }
-
-    .start-card h1 {
-      font-size: 22px;
-      color: #ffd166;
-      margin-bottom: 8px;
-    }
-
-    .start-card p {
-      font-size: 13px;
-      color: #aaa;
-      margin-bottom: 20px;
-    }
-
-    .input-group {
-      margin-bottom: 20px;
-      text-align: left;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 12px;
-      color: #d1c4e9;
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #5a4270;
-      background: #15101e;
-      color: #fff;
-      font-size: 15px;
-      outline: none;
-    }
-
-    .color-picker {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 8px;
-    }
-
-    .color-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-
-    .color-btn.selected {
-      border-color: #fff;
-      transform: scale(1.15);
-      box-shadow: 0 0 10px rgba(255,255,255,0.5);
-    }
-
-    .btn-start {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);
-      color: #fff;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
-      transition: transform 0.1s;
-    }
-
-    .btn-start:active {
-      transform: scale(0.98);
-    }
-
-    /* Игровой интерфейс */
-    #game-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Верхняя панель */
-    .top-bar {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      right: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      pointer-events: none;
-      z-index: 20;
-    }
-
-    .top-bar-left, .top-bar-right {
-      display: flex;
-      gap: 10px;
-      pointer-events: auto;
-    }
-
-    .icon-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(21, 16, 30, 0.75);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: #fff;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      transition: background 0.2s;
-    }
-
-    .icon-btn.active {
-      background: #06d6a0;
-      color: #15101e;
-    }
-
-    .room-badge {
-      background: rgba(21, 16, 30, 0.75);
-      border: 1px solid rgba(255,255,255,0.2);
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      backdrop-filter: blur(5px);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Чат окно */
-    #chat-overlay {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      width: min(320px, calc(100% - 40px));
-      height: 260px;
-      background: rgba(21, 16, 30, 0.85);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 16px;
-      display: flex;
-      flex-direction: column;
-      z-index: 30;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      transition: opacity 0.2s, transform 0.2s;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(10px);
-    }
-
-    #chat-overlay.visible {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    .chat-header {
-      padding: 10px 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      font-weight: bold;
-    }
-
-    .chat-messages {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 12px;
-    }
-
-    .chat-msg {
-      background: rgba(255,255,255,0.05);
-      padding: 6px 10px;
-      border-radius: 8px;
-      word-break: break-word;
-    }
-
-    .chat-msg .author {
-      font-weight: bold;
-      color: #ffd166;
-      margin-right: 4px;
-    }
-
-    .chat-input-area {
-      padding: 8px;
-      display: flex;
-      gap: 6px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .chat-input-area input {
-      flex: 1;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 8px 12px;
-      border-radius: 20px;
-      color: #fff;
-      font-size: 13px;
-      outline: none;
-    }
-
-    .chat-send-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #06d6a0;
-      border: none;
-      color: #15101e;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    /* Виртуальный Джойстик */
-    #joystick-zone {
-      position: absolute;
-      bottom: 30px;
-      right: 30px;
-      width: 120px;
-      height: 120px;
-      z-index: 10;
-      display: none;
-    }
-
-    .joystick-base {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      position: relative;
-      backdrop-filter: blur(2px);
-    }
-
-    .joystick-stick {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.4);
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
-	/* Принудительный полноэкранный горизонтальный режим */
 html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: #120b07;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: #120b07;
+    color: white;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+body {
+    position: fixed;
+    inset: 0;
+    overscroll-behavior: none;
+}
+
+button, input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+button:focus-visible, input:focus-visible {
+    outline: 2px solid #06d6a0;
+    outline-offset: 3px;
+}
+
+#start-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    overflow-y: auto;
+    background: radial-gradient(circle at center, #342442, #0c0812 75%);
+}
+
+.start-card {
+    width: 100%;
+    max-width: 370px;
+    padding: 26px 24px;
+    border: 1px solid #6c507f;
+    border-radius: 22px;
+    background: rgba(35, 27, 46, .96);
+    box-shadow: 0 15px 50px #0008;
+    text-align: center;
+}
+
+.start-card h1 {
+    margin: 0 0 8px;
+    color: #ffd166;
+    font-size: 24px;
+}
+
+.start-card p {
+    margin: 0 0 22px;
+    color: #c3b9cf;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.input-group {
+    margin-bottom: 19px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: #d1c4e9;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.input-group input {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px;
+    border: 1px solid #5a4270;
+    border-radius: 10px;
+    background: #15101e;
+    color: white;
+    font-size: 16px;
+    outline: none;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.color-picker {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.color-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    box-shadow: 0 3px 8px #0004;
+}
+
+.color-btn.selected {
+    border-color: white;
+    box-shadow: 0 0 12px #ffffff70;
+    transform: scale(1.1);
+}
+
+.btn-start {
+    width: 100%;
+    min-height: 49px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #06d6a0, #118ab2);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 5px 20px #06d6a033;
 }
 
 #game-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #120b07;
 }
 
-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* Сохраняет пропорции комнаты без искажений */
+#canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
 }
-  </style>
+
+.top-bar {
+    position: absolute;
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.top-bar-left, .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 1px solid #ffffff35;
+    border-radius: 50%;
+    background: #15101edb;
+    color: white;
+    font-size: 17px;
+    box-shadow: 0 4px 12px #0004;
+    touch-action: manipulation;
+}
+
+.icon-btn.active {
+    background: #06d6a0;
+    color: #10251e;
+}
+
+.icon-btn:disabled {
+    opacity: .5;
+}
+
+.room-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid #ffffff35;
+    border-radius: 22px;
+    background: #15101edb;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+#room-status {
+    position: absolute;
+    top: 64px;
+    left: 50%;
+    z-index: 15;
+    max-width: 75%;
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: #15101ec9;
+    color: #d7d0df;
+    font-size: 11px;
+    text-align: center;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+#chat-overlay {
+    position: absolute;
+    left: max(12px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    width: min(320px, calc(100% - 24px));
+    height: min(270px, 55%);
+    overflow: hidden;
+    border: 1px solid #ffffff35;
+    border-radius: 16px;
+    background: #15101eef;
+    box-shadow: 0 10px 30px #0006;
+    backdrop-filter: blur(10px);
+    transition: opacity .18s, transform .18s;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+}
+
+#chat-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 11px 14px;
+    border-bottom: 1px solid #ffffff18;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+#close-chat-btn {
+    padding: 8px;
+    border: 0;
+    background: transparent;
+    color: white;
+    font-size: 16px;
+}
+
+.chat-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 12px;
+    overscroll-behavior: contain;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.chat-msg {
+    padding: 7px 9px;
+    border-radius: 8px;
+    background: #ffffff0c;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+}
+
+.chat-msg .author {
+    margin-right: 4px;
+    color: #ffd166;
+    font-weight: bold;
+}
+
+.chat-input-area {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    padding: 8px;
+    border-top: 1px solid #ffffff18;
+}
+
+.chat-input-area input {
+    min-width: 0;
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ffffff22;
+    border-radius: 20px;
+    background: #0005;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.chat-send-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #06d6a0;
+    color: #10251e;
+}
+
+#joystick-zone {
+    position: absolute;
+    right: max(22px, env(safe-area-inset-right));
+    bottom: max(22px, env(safe-area-inset-bottom));
+    z-index: 10;
+    display: none;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    touch-action: none;
+}
+
+.joystick-base {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #ffffff35;
+    border-radius: 50%;
+    background: #ffffff12;
+    backdrop-filter: blur(3px);
+}
+
+.joystick-stick {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 48px;
+    height: 48px;
+    border: 1px solid #ffffff50;
+    border-radius: 50%;
+    background: #ffffff65;
+    box-shadow: 0 3px 12px #0005;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+#landscape-hint {
+    display: none;
+}
+
+#game-error {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    z-index: 90;
+    display: none;
+    max-width: 90%;
+    padding: 10px 14px;
+    border: 1px solid #ff8b8b66;
+    border-radius: 10px;
+    background: #3a1010ee;
+    color: white;
+    font-size: 12px;
+    transform: translateX(-50%);
+}
+
+@media (pointer: coarse) {
+    #joystick-zone {
+        display: block;
+    }
+
+    .icon-btn {
+        width: 42px;
+        height: 42px;
+    }
+}
+
+@media (max-height: 450px) {
+    .top-bar {
+        top: max(5px, env(safe-area-inset-top));
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+
+    .room-badge {
+        min-height: 34px;
+        padding: 6px 9px;
+    }
+
+    #room-status {
+        top: 45px;
+    }
+
+    #chat-overlay {
+        height: 48%;
+        bottom: 8px;
+    }
+
+    #joystick-zone {
+        width: 90px;
+        height: 90px;
+        right: 16px;
+        bottom: 12px;
+    }
+
+    .joystick-stick {
+        width: 40px;
+        height: 40px;
+    }
+}
+</style>
 </head>
+
 <body>
 
-  <!-- Стартовый экран -->
-  <div id="start-screen">
+<div id="start-screen">
     <div class="start-card">
-      <h1>Уютная RPG Комната</h1>
-      <p>Создай персонажа и заходи в гости!</p>
-      
-      <div class="input-group">
-        <label for="player-name">Ваше Имя:</label>
-        <input type="text" id="player-name" placeholder="Введите имя..." maxlength="12" value="Гость">
-      </div>
+        <h1>Уютная RPG Комната</h1>
+        <p>Создай персонажа и заходи в гости!</p>
 
-      <div class="input-group">
-        <label>Цвет кружка:</label>
-        <div class="color-picker">
-          <button class="color-btn selected" data-color="#ff4757" style="background:#ff4757"></button>
-          <button class="color-btn" data-color="#2ed573" style="background:#2ed573"></button>
-          <button class="color-btn" data-color="#1e90ff" style="background:#1e90ff"></button>
-          <button class="color-btn" data-color="#ffa502" style="background:#ffa502"></button>
-          <button class="color-btn" data-color="#9b59b6" style="background:#9b59b6"></button>
+        <div class="input-group">
+            <label for="player-name">Ваше имя</label>
+            <input id="player-name" type="text"
+                   maxlength="12" value="Гость"
+                   placeholder="Введите имя..." autocomplete="nickname">
         </div>
-      </div>
 
-      <button class="btn-start" id="start-btn">Войти в комнату</button>
+        <div class="input-group">
+            <label>Цвет персонажа</label>
+            <div class="color-picker">
+                <button type="button" class="color-btn selected"
+                        data-color="#ff4757" style="background:#ff4757"
+                        aria-label="Красный"></button>
+                <button type="button" class="color-btn"
+                        data-color="#2ed573" style="background:#2ed573"
+                        aria-label="Зелёный"></button>
+                <button type="button" class="color-btn"
+                        data-color="#1e90ff" style="background:#1e90ff"
+                        aria-label="Синий"></button>
+                <button type="button" class="color-btn"
+                        data-color="#ffa502" style="background:#ffa502"
+                        aria-label="Оранжевый"></button>
+                <button type="button" class="color-btn"
+                        data-color="#9b59b6" style="background:#9b59b6"
+                        aria-label="Фиолетовый"></button>
+            </div>
+        </div>
+
+        <button type="button" class="btn-start" id="start-btn">
+            Войти в комнату
+        </button>
     </div>
-  </div>
+</div>
 
-  <!-- Игровой контейнер -->
-  <div id="game-container">
+<div id="game-container" hidden>
     <canvas id="canvas"></canvas>
 
-    <!-- Верхние кнопки -->
     <div class="top-bar">
-      <div class="top-bar-left">
-        <button class="icon-btn" id="toggle-chat-btn" title="Чат"><i class="fas fa-comment"></i></button>
-        <button class="icon-btn" id="toggle-mic-btn" title="Микрофон"><i class="fas fa-microphone-slash"></i></button>
-      </div>
-      <div class="top-bar-right">
-        <div class="room-badge">
-          <i class="fas fa-users" style="color:#06d6a0"></i>
-          <span id="player-count">1</span>
+        <div class="top-bar-left">
+            <button type="button" class="icon-btn" id="toggle-chat-btn"
+                    title="Открыть чат" aria-label="Открыть чат">
+                <i class="fas fa-comment"></i>
+            </button>
+
+            <button type="button" class="icon-btn" id="toggle-mic-btn"
+                    title="Включить микрофон" aria-label="Включить микрофон">
+                <i class="fas fa-microphone-slash"></i>
+            </button>
         </div>
-        <button class="icon-btn" id="copy-link-btn" title="Скопировать ссылку для друга"><i class="fas fa-link"></i></button>
-      </div>
+
+        <div class="top-bar-right">
+            <div class="room-badge">
+                <i class="fas fa-users" style="color:#06d6a0"></i>
+                <span id="player-count">1</span>
+            </div>
+
+            <button type="button" class="icon-btn" id="copy-link-btn"
+                    title="Скопировать ссылку" aria-label="Скопировать ссылку">
+                <i class="fas fa-link"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- Чат -->
+    <div id="room-status">Подготовка комнаты...</div>
+
     <div id="chat-overlay">
-      <div class="chat-header">
-        <span>Чат комнаты</span>
-        <i class="fas fa-times" id="close-chat-btn" style="cursor:pointer"></i>
-      </div>
-      <div class="chat-messages" id="chat-messages"></div>
-      <div class="chat-input-area">
-        <input type="text" id="chat-input" placeholder="Напишите сообщение..." maxlength="60">
-        <button class="chat-send-btn" id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
-      </div>
+        <div class="chat-header">
+            <span>Чат комнаты</span>
+            <button type="button" id="close-chat-btn"
+                    aria-label="Закрыть чат">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chat-messages"
+             aria-live="polite"></div>
+
+        <div class="chat-input-area">
+            <input id="chat-input" type="text"
+                   placeholder="Напишите сообщение..."
+                   maxlength="60" autocomplete="off">
+            <button type="button" class="chat-send-btn" id="chat-send-btn"
+                    aria-label="Отправить сообщение">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- Виртуальный джойстик для мобилок -->
-    <div id="joystick-zone">
-      <div class="joystick-base">
-        <div class="joystick-stick" id="joystick-stick"></div>
-      </div>
+    <div id="joystick-zone" aria-label="Управление персонажем">
+        <div class="joystick-base">
+            <div class="joystick-stick" id="joystick-stick"></div>
+        </div>
     </div>
-  </div>
+
+    <div id="game-error"></div>
+</div>
 
 <script>
-  // ==========================================
-  // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И НАСТРОЙКИ
-  // ==========================================
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
+'use strict';
 
-  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobile) {
-    document.getElementById('joystick-zone').style.display = 'block';
-  }
+// ==========================================
+// НАСТРОЙКИ И ПЕРЕМЕННЫЕ
+// ==========================================
 
-  const ROOM_WIDTH = 800;
-  const ROOM_HEIGHT = 600;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-  const images = {
-    shkaf: new Image(),
-    divan: new Image(),
-    kover: new Image()
-  };
+const startScreen = document.getElementById('start-screen');
+const gameContainer = document.getElementById('game-container');
+const roomStatus = document.getElementById('room-status');
+const errorBox = document.getElementById('game-error');
 
-  images.shkaf.src = 'shkaf.png';
-  images.divan.src = 'divan.png';
-  images.kover.src = 'kover.png';
+const ROOM_WIDTH = 800;
+const ROOM_HEIGHT = 600;
 
-  const loadedImages = { shkaf: false, divan: false, kover: false };
-  images.shkaf.onload = () => loadedImages.shkaf = true;
-  images.divan.onload = () => loadedImages.divan = true;
-  images.kover.onload = () => loadedImages.kover = true;
+const keys = Object.create(null);
+const remotePlayers = Object.create(null);
+const connections = Object.create(null);
+const activeCalls = new Set();
+const activeAudioElements = new Set();
 
-  // Уникальный ID персонажа
-  let myPeerId = 'player-' + Math.random().toString(36).substring(2, 8);
+let peer = null;
+let isHost = false;
+let started = false;
+let networkReady = false;
+let networkStarting = false;
+let micEnabled = false;
+let localAudioStream = null;
+let selectedColor = '#ff4757';
+let touchTarget = null;
+let animationFrame = 0;
+let lastNetworkUpdate = 0;
 
-  let localPlayer = {
-    id: myPeerId,
-    name: "Гость",
-    color: "#ff4757",
+const joystickZone = document.getElementById('joystick-zone');
+const joystickStick = document.getElementById('joystick-stick');
+
+let joystickPointerId = null;
+let joystickVector = { x: 0, y: 0 };
+
+let roomCode = '';
+
+const localPlayer = {
+    id: '',
+    name: 'Гость',
+    color: selectedColor,
     x: ROOM_WIDTH / 2,
     y: ROOM_HEIGHT / 2 + 50,
     radius: 18,
     speed: 3.5,
-    chatBubble: null,
-    chatBubbleTimer: null,
+    chatBubble: '',
+    chatBubbleUntil: 0,
     isSpeaking: false
-  };
+};
 
-  const remotePlayers = {};
+// ==========================================
+// ИЗОБРАЖЕНИЯ МЕБЕЛИ
+// ==========================================
 
-  const furniture = [
-    { type: 'kover', x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2, w: 220, h: 150, rotation: 0, solid: false },
-    { type: 'divan', x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2 - 120, w: 140, h: 60, rotation: 0, solid: true },
-    { type: 'divan', x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2 + 120, w: 140, h: 60, rotation: Math.PI, solid: true },
-    { type: 'shkaf', x: 90, y: 90, w: 70, h: 100, rotation: 0, solid: true },
-    { type: 'shkaf', x: ROOM_WIDTH - 90, y: 90, w: 70, h: 100, rotation: 0, solid: true },
-    { type: 'shkaf', x: 90, y: ROOM_HEIGHT - 90, w: 70, h: 100, rotation: Math.PI, solid: true },
-    { type: 'shkaf', x: ROOM_WIDTH - 90, y: ROOM_HEIGHT - 90, w: 70, h: 100, rotation: Math.PI, solid: true }
-  ];
+const images = {
+    shkaf: new Image(),
+    divan: new Image(),
+    kover: new Image()
+};
 
-  // ==========================================
-  // УПРАВЛЕНИЕ (WASD, Сенсор, Джойстик)
-  // ==========================================
-  const keys = {};
-  let touchTarget = null;
+const loadedImages = {
+    shkaf: false,
+    divan: false,
+    kover: false
+};
 
-  window.addEventListener('keydown', e => keys[e.code] = true);
-  window.addEventListener('keyup', e => keys[e.code] = false);
+for (const name of Object.keys(images)) {
+    images[name].onload = () => {
+        loadedImages[name] = true;
+    };
 
-  const joystickZone = document.getElementById('joystick-zone');
-  const joystickStick = document.getElementById('joystick-stick');
-  let joystickActive = false;
-  let joystickVector = { x: 0, y: 0 };
+    images[name].onerror = () => {
+        loadedImages[name] = false;
+        console.warn('Не удалось загрузить изображение:', name + '.png');
+    };
 
-  joystickZone.addEventListener('touchstart', e => {
-    e.preventDefault();
-    joystickActive = true;
-    updateJoystick(e.touches[0]);
-  });
+    images[name].src = name + '.png';
+}
 
-  window.addEventListener('touchmove', e => {
-    if (joystickActive) updateJoystick(e.touches[0]);
-  }, { passive: false });
+// ==========================================
+// МЕБЕЛЬ
+// ==========================================
 
-  window.addEventListener('touchend', () => {
-    if (joystickActive) {
-      joystickActive = false;
-      joystickVector = { x: 0, y: 0 };
-      joystickStick.style.transform = `translate(-50%, -50%)`;
+const furniture = [
+    {
+        type: 'kover',
+        x: 400, y: 300, w: 220, h: 150,
+        rotation: 0, solid: false
+    },
+    {
+        type: 'divan',
+        x: 400, y: 180, w: 140, h: 60,
+        rotation: 0, solid: true
+    },
+    {
+        type: 'divan',
+        x: 400, y: 420, w: 140, h: 60,
+        rotation: Math.PI, solid: true
+    },
+    {
+        type: 'shkaf',
+        x: 90, y: 90, w: 70, h: 100,
+        rotation: 0, solid: true
+    },
+    {
+        type: 'shkaf',
+        x: 710, y: 90, w: 70, h: 100,
+        rotation: 0, solid: true
+    },
+    {
+        type: 'shkaf',
+        x: 90, y: 510, w: 70, h: 100,
+        rotation: Math.PI, solid: true
+    },
+    {
+        type: 'shkaf',
+        x: 710, y: 510, w: 70, h: 100,
+        rotation: Math.PI, solid: true
     }
-  });
+];
 
-  function updateJoystick(touch) {
+// ==========================================
+// CANVAS: АДАПТАЦИЯ ПОД ЭКРАН
+// ==========================================
+
+function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 200);
+});
+
+// Масштаб и смещение для логических координат комнаты.
+function getRoomTransform() {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+
+    const scale = Math.min(
+        width / ROOM_WIDTH,
+        height / ROOM_HEIGHT
+    );
+
+    return {
+        scale,
+        x: (width - ROOM_WIDTH * scale) / 2,
+        y: (height - ROOM_HEIGHT * scale) / 2
+    };
+}
+
+function screenToRoom(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const transform = getRoomTransform();
+
+    return {
+        x: (clientX - rect.left - transform.x) / transform.scale,
+        y: (clientY - rect.top - transform.y) / transform.scale
+    };
+}
+
+// ==========================================
+// УПРАВЛЕНИЕ С КЛАВИАТУРЫ
+// ==========================================
+
+window.addEventListener('keydown', event => {
+    if (event.target instanceof HTMLInputElement) return;
+
+    if ([
+        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+        'Space'
+    ].includes(event.code)) {
+        event.preventDefault();
+    }
+
+    keys[event.code] = true;
+});
+
+window.addEventListener('keyup', event => {
+    keys[event.code] = false;
+});
+
+window.addEventListener('blur', () => {
+    for (const key of Object.keys(keys)) {
+        keys[key] = false;
+    }
+
+    joystickVector = { x: 0, y: 0 };
+    joystickPointerId = null;
+    joystickStick.style.transform = 'translate(-50%, -50%)';
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        for (const key of Object.keys(keys)) {
+            keys[key] = false;
+        }
+    }
+});
+
+// ==========================================
+// СЕНСОРНЫЙ ДЖОЙСТИК
+// Pointer Events поддерживают Android и iPhone.
+// ==========================================
+
+joystickZone.addEventListener('pointerdown', event => {
+    if (!started || joystickPointerId !== null) return;
+
+    event.preventDefault();
+
+    joystickPointerId = event.pointerId;
+
+    try {
+        joystickZone.setPointerCapture(event.pointerId);
+    } catch (_) {}
+
+    updateJoystick(event);
+});
+
+joystickZone.addEventListener('pointermove', event => {
+    if (event.pointerId !== joystickPointerId) return;
+
+    event.preventDefault();
+    updateJoystick(event);
+});
+
+function stopJoystick(event) {
+    if (
+        event &&
+        joystickPointerId !== null &&
+        event.pointerId !== joystickPointerId
+    ) {
+        return;
+    }
+
+    joystickPointerId = null;
+    joystickVector = { x: 0, y: 0 };
+    joystickStick.style.transform = 'translate(-50%, -50%)';
+}
+
+joystickZone.addEventListener('pointerup', stopJoystick);
+joystickZone.addEventListener('pointercancel', stopJoystick);
+joystickZone.addEventListener('lostpointercapture', stopJoystick);
+
+function updateJoystick(event) {
     const rect = joystickZone.getBoundingClientRect();
+
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    let dx = touch.clientX - centerX;
-    let dy = touch.clientY - centerY;
-    let dist = Math.hypot(dx, dy);
-    let maxDist = rect.width / 2;
 
-    if (dist > maxDist) {
-      dx = (dx / dist) * maxDist;
-      dy = (dy / dist) * maxDist;
+    let dx = event.clientX - centerX;
+    let dy = event.clientY - centerY;
+
+    const maxDist = rect.width / 2 - 5;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance > maxDist) {
+        dx = dx / distance * maxDist;
+        dy = dy / distance * maxDist;
     }
 
-    joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    joystickVector = { x: dx / maxDist, y: dy / maxDist };
-  }
+    joystickVector = {
+        x: dx / maxDist,
+        y: dy / maxDist
+    };
 
-  canvas.addEventListener('pointerdown', e => {
-    if (e.target === canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      touchTarget = {
-        x: (e.clientX - rect.left) * scaleX - (canvas.width - ROOM_WIDTH) / 2,
-        y: (e.clientY - rect.top) * scaleY - (canvas.height - ROOM_HEIGHT) / 2
-      };
+    joystickStick.style.transform =
+        `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+}
+
+// ==========================================
+// НАЖАТИЕ ПО КОМНАТЕ ДЛЯ ПЕРЕМЕЩЕНИЯ
+// ==========================================
+
+canvas.addEventListener('pointerdown', event => {
+    if (!started || event.button !== 0) return;
+
+    const point = screenToRoom(event.clientX, event.clientY);
+
+    if (
+        point.x < 0 || point.x > ROOM_WIDTH ||
+        point.y < 0 || point.y > ROOM_HEIGHT
+    ) {
+        return;
     }
-  });
 
-  // ==========================================
-  // ДВИЖЕНИЕ И КОЛЛИЗИИ
-  // ==========================================
-  function movePlayer() {
+    touchTarget = {
+        x: point.x,
+        y: point.y
+    };
+});
+
+// ==========================================
+// СТОЛКНОВЕНИЯ И ДВИЖЕНИЕ
+// ==========================================
+
+function checkCollisions(x, y) {
+    for (const item of furniture) {
+        if (!item.solid) continue;
+
+        const halfW = item.w / 2;
+        const halfH = item.h / 2;
+
+        if (
+            x + localPlayer.radius > item.x - halfW &&
+            x - localPlayer.radius < item.x + halfW &&
+            y + localPlayer.radius > item.y - halfH &&
+            y - localPlayer.radius < item.y + halfH
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function tryMove(vx, vy) {
+    const oldX = localPlayer.x;
+    const oldY = localPlayer.y;
+
+    const nextX = localPlayer.x + vx;
+
+    if (!checkCollisions(nextX, localPlayer.y)) {
+        localPlayer.x = nextX;
+    }
+
+    const nextY = localPlayer.y + vy;
+
+    if (!checkCollisions(localPlayer.x, nextY)) {
+        localPlayer.y = nextY;
+    }
+
+    const padding = 45 + localPlayer.radius;
+
+    localPlayer.x = Math.max(
+        padding,
+        Math.min(ROOM_WIDTH - padding, localPlayer.x)
+    );
+
+    localPlayer.y = Math.max(
+        padding,
+        Math.min(ROOM_HEIGHT - padding, localPlayer.y)
+    );
+
+    if (oldX !== localPlayer.x || oldY !== localPlayer.y) {
+        broadcast({
+            type: 'move',
+            x: localPlayer.x,
+            y: localPlayer.y
+        });
+    }
+}
+
+function movePlayer() {
+    if (!started) return;
+
     let dx = 0;
     let dy = 0;
 
-    if (keys['KeyW'] || keys['ArrowUp']) dy -= 1;
-    if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
-    if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
-    if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
+    if (keys.KeyW || keys.ArrowUp) dy -= 1;
+    if (keys.KeyS || keys.ArrowDown) dy += 1;
+    if (keys.KeyA || keys.ArrowLeft) dx -= 1;
+    if (keys.KeyD || keys.ArrowRight) dx += 1;
 
-    if (joystickActive) {
-      dx = joystickVector.x;
-      dy = joystickVector.y;
-      touchTarget = null;
+    if (joystickPointerId !== null) {
+        dx = joystickVector.x;
+        dy = joystickVector.y;
+        touchTarget = null;
     }
 
     if (dx !== 0 || dy !== 0) {
-      touchTarget = null;
-      let len = Math.hypot(dx, dy);
-      if (len > 1) { dx /= len; dy /= len; }
-      tryMove(dx * localPlayer.speed, dy * localPlayer.speed);
-    } else if (touchTarget) {
-      let tDx = touchTarget.x - localPlayer.x;
-      let tDy = touchTarget.y - localPlayer.y;
-      let dist = Math.hypot(tDx, tDy);
-
-      if (dist < localPlayer.speed) {
-        localPlayer.x = touchTarget.x;
-        localPlayer.y = touchTarget.y;
         touchTarget = null;
-      } else {
-        tryMove((tDx / dist) * localPlayer.speed, (tDy / dist) * localPlayer.speed);
-      }
+
+        const length = Math.hypot(dx, dy);
+
+        if (length > 1) {
+            dx /= length;
+            dy /= length;
+        }
+
+        tryMove(
+            dx * localPlayer.speed,
+            dy * localPlayer.speed
+        );
+
+    } else if (touchTarget) {
+        const tx = touchTarget.x - localPlayer.x;
+        const ty = touchTarget.y - localPlayer.y;
+        const distance = Math.hypot(tx, ty);
+
+        if (distance <= localPlayer.speed) {
+            tryMove(tx, ty);
+            touchTarget = null;
+        } else {
+            tryMove(
+                tx / distance * localPlayer.speed,
+                ty / distance * localPlayer.speed
+            );
+        }
     }
-  }
+}
 
-  function tryMove(vx, vy) {
-    let newX = localPlayer.x + vx;
-    if (!checkCollisions(newX, localPlayer.y)) localPlayer.x = newX;
+// ==========================================
+// ОТРИСОВКА КОМНАТЫ
+// ==========================================
 
-    let newY = localPlayer.y + vy;
-    if (!checkCollisions(localPlayer.x, newY)) localPlayer.y = newY;
-
-    const wallPadding = 45;
-    localPlayer.x = Math.max(wallPadding + localPlayer.radius, Math.min(ROOM_WIDTH - wallPadding - localPlayer.radius, localPlayer.x));
-    localPlayer.y = Math.max(wallPadding + localPlayer.radius, Math.min(ROOM_HEIGHT - wallPadding - localPlayer.radius, localPlayer.y));
-
-    if (window.peerManager) {
-      window.peerManager.broadcast({
-        type: 'move',
-        x: localPlayer.x,
-        y: localPlayer.y
-      });
-    }
-  }
-
-  function checkCollisions(x, y) {
-    for (let item of furniture) {
-      if (!item.solid) continue;
-      let hw = item.w / 2;
-      let hh = item.h / 2;
-
-      if (x + localPlayer.radius > item.x - hw &&
-          x - localPlayer.radius < item.x + hw &&
-          y + localPlayer.radius > item.y - hh &&
-          y - localPlayer.radius < item.y + hh) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // ==========================================
-  // GRAPHICS & CANVAS
-  // ==========================================
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
-  function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    const offsetX = (canvas.width - ROOM_WIDTH) / 2;
-    const offsetY = (canvas.height - ROOM_HEIGHT) / 2;
-    ctx.translate(offsetX, offsetY);
-
+function drawRoom() {
     ctx.fillStyle = '#120b07';
     ctx.fillRect(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
 
     ctx.fillStyle = '#2e1d13';
     ctx.fillRect(35, 35, ROOM_WIDTH - 70, ROOM_HEIGHT - 70);
 
+    // Деревянный пол.
     ctx.strokeStyle = '#1a0f0a';
     ctx.lineWidth = 2;
-    for (let i = 50; i < ROOM_WIDTH - 50; i += 40) {
-      ctx.beginPath(); ctx.moveTo(i, 35); ctx.lineTo(i, ROOM_HEIGHT - 35); ctx.stroke();
+
+    for (let x = 50; x < ROOM_WIDTH - 50; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 35);
+        ctx.lineTo(x, ROOM_HEIGHT - 35);
+        ctx.stroke();
     }
 
-    furniture.forEach(item => {
-      ctx.save();
-      ctx.translate(item.x, item.y);
-      ctx.rotate(item.rotation);
+    // Границы комнаты.
+    ctx.strokeStyle = '#70452c';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(35, 35, ROOM_WIDTH - 70, ROOM_HEIGHT - 70);
 
-      if (item.type === 'kover') {
-        if (loadedImages.kover) ctx.drawImage(images.kover, -item.w/2, -item.h/2, item.w, item.h);
-        else {
-          ctx.fillStyle = '#8a2be2'; ctx.fillRect(-item.w/2, -item.h/2, item.w, item.h);
+    // Мебель.
+    for (const item of furniture) {
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.rotate(item.rotation);
+
+        if (loadedImages[item.type]) {
+            ctx.drawImage(
+                images[item.type],
+                -item.w / 2,
+                -item.h / 2,
+                item.w,
+                item.h
+            );
+        } else {
+            ctx.fillStyle =
+                item.type === 'kover' ? '#8a2be2' :
+                item.type === 'divan' ? '#c0392b' :
+                '#d35400';
+
+            ctx.fillRect(
+                -item.w / 2,
+                -item.h / 2,
+                item.w,
+                item.h
+            );
+
+            ctx.strokeStyle = '#ffffff35';
+            ctx.lineWidth = 2;
+
+            ctx.strokeRect(
+                -item.w / 2,
+                -item.h / 2,
+                item.w,
+                item.h
+            );
         }
-      } else if (item.type === 'divan') {
-        if (loadedImages.divan) ctx.drawImage(images.divan, -item.w/2, -item.h/2, item.w, item.h);
-        else {
-          ctx.fillStyle = '#c0392b'; ctx.fillRect(-item.w/2, -item.h/2, item.w, item.h);
-        }
-      } else if (item.type === 'shkaf') {
-        if (loadedImages.shkaf) ctx.drawImage(images.shkaf, -item.w/2, -item.h/2, item.w, item.h);
-        else {
-          ctx.fillStyle = '#d35400'; ctx.fillRect(-item.w/2, -item.h/2, item.w, item.h);
-        }
-      }
-      ctx.restore();
-    });
 
-    Object.values(remotePlayers).forEach(drawPlayer);
-    drawPlayer(localPlayer);
+        ctx.restore();
+    }
+}
 
-    ctx.restore();
-    requestAnimationFrame(gameLoop);
-  }
+function drawPlayer(player) {
+    if (!player) return;
 
-  function drawPlayer(p) {
     ctx.save();
-    ctx.translate(p.x, p.y);
+    ctx.translate(player.x, player.y);
 
-    if (p.isSpeaking) {
-      ctx.strokeStyle = '#2e7d32';
-      ctx.lineWidth = 2;
-      let waveSize = p.radius + 6 + Math.sin(Date.now() / 100) * 4;
-      ctx.beginPath(); ctx.arc(0, 0, waveSize, 0, Math.PI * 2); ctx.stroke();
-    }
-
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    // Тень.
+    ctx.fillStyle = '#0006';
     ctx.beginPath();
-    ctx.ellipse(0, p.radius - 2, p.radius, p.radius * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+        0, player.radius - 2,
+        player.radius, player.radius * 0.5,
+        0, 0, Math.PI * 2
+    );
     ctx.fill();
 
-    let grad = ctx.createRadialGradient(-4, -4, 2, 0, 0, p.radius);
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.3, p.color);
-    grad.addColorStop(1, '#000000');
+    // Волны голоса.
+    if (player.isSpeaking) {
+        ctx.strokeStyle = '#06d6a0';
+        ctx.lineWidth = 2;
 
-    ctx.fillStyle = grad;
+        const wave = player.radius + 7 +
+            Math.sin(Date.now() / 100) * 3;
+
+        ctx.beginPath();
+        ctx.arc(0, 0, wave, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // Круглый персонаж.
+    const gradient = ctx.createRadialGradient(
+        -5, -6, 2, 0, 0, player.radius
+    );
+
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(.28, player.color);
+    gradient.addColorStop(1, '#19131c');
+
+    ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = '#ffcc80';
+    // Имя.
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
     ctx.shadowColor = '#000';
-    ctx.shadowBlur = 4;
-    ctx.fillText(p.name, 0, -p.radius - 8);
+    ctx.shadowBlur = 5;
+    ctx.fillStyle = '#ffcc80';
 
-    if (p.chatBubble) {
-      ctx.font = '11px sans-serif';
-      let textWidth = ctx.measureText(p.chatBubble).width;
-      let bgW = textWidth + 16;
-      let bgH = 22;
-      let bgY = -p.radius - 35;
+    ctx.fillText(
+        player.name || 'Гость',
+        0,
+        -player.radius - 9
+    );
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-      ctx.beginPath();
-      ctx.roundRect(-bgW / 2, bgY, bgW, bgH, 10);
-      ctx.fill();
+    // Облачко сообщения.
+    if (
+        player.chatBubble &&
+        player.chatBubbleUntil > Date.now()
+    ) {
+        const text = player.chatBubble.slice(0, 60);
 
-      ctx.fillStyle = '#1a0f0a';
-      ctx.shadowBlur = 0;
-      ctx.fillText(p.chatBubble, 0, bgY + 15);
+        ctx.font = '11px sans-serif';
+
+        const maxWidth = 160;
+        const textWidth = Math.min(
+            ctx.measureText(text).width,
+            maxWidth
+        );
+
+        const bubbleWidth = textWidth + 18;
+        const bubbleHeight = 25;
+        const bubbleY = -player.radius - 39;
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#fffffff2';
+
+        ctx.beginPath();
+        ctx.roundRect(
+            -bubbleWidth / 2,
+            bubbleY,
+            bubbleWidth,
+            bubbleHeight,
+            9
+        );
+        ctx.fill();
+
+        ctx.fillStyle = '#21182a';
+        ctx.fillText(
+            text,
+            0,
+            bubbleY + 16,
+            maxWidth
+        );
     }
 
     ctx.restore();
-  }
+}
 
-  function gameLoop() {
+function render() {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.fillStyle = '#120b07';
+    ctx.fillRect(0, 0, width, height);
+
+    const transform = getRoomTransform();
+
+    ctx.save();
+    ctx.translate(transform.x, transform.y);
+    ctx.scale(transform.scale, transform.scale);
+
+    drawRoom();
+
+    for (const player of Object.values(remotePlayers)) {
+        drawPlayer(player);
+    }
+
+    drawPlayer(localPlayer);
+
+    ctx.restore();
+}
+
+function gameLoop() {
+    if (!started) return;
+
     movePlayer();
     render();
-  }
 
-  // ==========================================
-  // СТАРТОВЫЙ ЭКРАН И ЧАТ
-  // ==========================================
-  const colorBtns = document.querySelectorAll('.color-btn');
-  colorBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      colorBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      localPlayer.color = btn.dataset.color;
+    animationFrame = requestAnimationFrame(gameLoop);
+}
+
+// ==========================================
+// ВЫБОР ЦВЕТА
+// ==========================================
+
+document.querySelectorAll('.color-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        document.querySelectorAll('.color-btn').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        button.classList.add('selected');
+
+        selectedColor = button.dataset.color;
+        localPlayer.color = selectedColor;
+
+        broadcast({
+            type: 'profile',
+            name: localPlayer.name,
+            color: localPlayer.color
+        });
     });
-  });
-
-  document.getElementById('start-btn').addEventListener('click', () => {
-  const inputName = document.getElementById('player-name').value.trim();
-  if (inputName) localPlayer.name = inputName;
-
-  // 1. Прячем стартовый экран
-  document.getElementById('start-screen').style.display = 'none';
-
-  // 2. Включаем полноэкранный режим и горизонтальную ориентацию для телефонов
-  const elem = document.documentElement;
-  if (elem.requestFullscreen) {
-    elem.requestFullscreen().catch(err => console.log(err));
-  } else if (elem.webkitRequestFullscreen) { /* Safari / iOS */
-    elem.webkitRequestFullscreen();
-  }
-
-  // Попытка заблокировать экран в горизонтальном режиме (поддерживается в Android Chrome)
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('landscape').catch(err => console.log("Ориентация не заблокирована:", err));
-  }
-
-  // 3. Запускаем мультиплеер
-  initPeerNetwork();
 });
 
-  const chatOverlay = document.getElementById('chat-overlay');
-  const toggleChatBtn = document.getElementById('toggle-chat-btn');
-  const closeChatBtn = document.getElementById('close-chat-btn');
-  const chatInput = document.getElementById('chat-input');
-  const chatSendBtn = document.getElementById('chat-send-btn');
-  const chatMessages = document.getElementById('chat-messages');
+// ==========================================
+// СТАРТ ИГРЫ
+// ==========================================
 
-  toggleChatBtn.addEventListener('click', () => chatOverlay.classList.toggle('visible'));
-  closeChatBtn.addEventListener('click', () => chatOverlay.classList.remove('visible'));
+document.getElementById('start-btn').addEventListener('click', async () => {
+    if (started) return;
 
-  function sendChatMessage() {
-    const text = chatInput.value.trim();
+    localPlayer.name =
+        document.getElementById('player-name').value.trim().slice(0, 12)
+        || 'Гость';
+
+    localPlayer.color = selectedColor;
+
+    started = true;
+
+    startScreen.style.display = 'none';
+    gameContainer.hidden = false;
+
+    resizeCanvas();
+    render();
+
+    animationFrame = requestAnimationFrame(gameLoop);
+
+    // Fullscreen доступен не во всех браузерах iPhone.
+    try {
+        const root = document.documentElement;
+
+        if (root.requestFullscreen) {
+            await root.requestFullscreen();
+        } else if (root.webkitRequestFullscreen) {
+            root.webkitRequestFullscreen();
+        }
+    } catch (error) {
+        console.log('Полноэкранный режим недоступен:', error);
+    }
+
+    // Блокировка ориентации поддерживается не всеми устройствами.
+    try {
+        if (screen.orientation?.lock) {
+            await screen.orientation.lock('landscape');
+        }
+    } catch (error) {
+        console.log('Ориентация остаётся системной:', error);
+    }
+
+    initPeerNetwork();
+});
+
+// ==========================================
+// ЧАТ
+// ==========================================
+
+const chatOverlay = document.getElementById('chat-overlay');
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+
+document.getElementById('toggle-chat-btn').addEventListener('click', () => {
+    chatOverlay.classList.toggle('visible');
+});
+
+document.getElementById('close-chat-btn').addEventListener('click', () => {
+    chatOverlay.classList.remove('visible');
+});
+
+function addChatMessage(author, text) {
+    const row = document.createElement('div');
+    row.className = 'chat-msg';
+
+    const name = document.createElement('span');
+    name.className = 'author';
+    name.textContent = (author || 'Гость') + ':';
+
+    const message = document.createElement('span');
+    message.textContent = text;
+
+    row.append(name, message);
+    chatMessages.appendChild(row);
+
+    // Не храним бесконечное количество сообщений.
+    while (chatMessages.children.length > 100) {
+        chatMessages.firstElementChild.remove();
+    }
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showSpeechBubble(player, text) {
+    player.chatBubble = String(text).slice(0, 60);
+    player.chatBubbleUntil = Date.now() + 4000;
+}
+
+function sendChatMessage() {
+    const text = chatInput.value.trim().slice(0, 60);
+
     if (!text) return;
 
     addChatMessage(localPlayer.name, text);
     showSpeechBubble(localPlayer, text);
 
-    if (window.peerManager) {
-      window.peerManager.broadcast({
+    broadcast({
         type: 'chat',
-        text: text
-      });
-    }
+        text
+    });
 
     chatInput.value = '';
-  }
+}
 
-  chatSendBtn.addEventListener('click', sendChatMessage);
-  chatInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') sendChatMessage();
-  });
+document.getElementById('chat-send-btn')
+    .addEventListener('click', sendChatMessage);
 
-  function addChatMessage(author, text) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'chat-msg';
-    msgDiv.innerHTML = `<span class="author">${author}:</span> ${text}`;
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
+chatInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        sendChatMessage();
+    }
+});
 
-  function showSpeechBubble(player, text) {
-    player.chatBubble = text;
-    if (player.chatBubbleTimer) clearTimeout(player.chatBubbleTimer);
-    player.chatBubbleTimer = setTimeout(() => {
-      player.chatBubble = null;
-    }, 4000);
-  }
+// ==========================================
+// СЕТЬ PEERJS
+// ==========================================
 
-  document.getElementById('copy-link-btn').addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert('Ссылка скопирована! Отправь её другу.');
-  });
+function setRoomStatus(text) {
+    roomStatus.textContent = text;
+}
 
-  // ==========================================
-  // НАДЕЖНЫЙ МУЛЬТИПЛЕЕР (AUTO-DISCOVERY)
-  // ==========================================
-  let peer = null;
-  const connections = {};
+function showError(text) {
+    errorBox.textContent = text;
+    errorBox.style.display = 'block';
+}
 
-  function initPeerNetwork() {
-    let roomCode = window.location.hash.substring(1);
-    
-    // Если ссылки еще нет, создаем уникальную комнату
-    if (!roomCode) {
-      roomCode = 'room' + Math.floor(1000 + Math.random() * 9000);
-      window.location.hash = roomCode;
+function updatePlayerCount() {
+    document.getElementById('player-count').textContent =
+        String(Object.keys(remotePlayers).length + 1);
+}
+
+function initPeerNetwork() {
+    if (networkStarting || networkReady) return;
+
+    networkStarting = true;
+
+    if (typeof Peer === 'undefined') {
+        setRoomStatus('Ошибка загрузки PeerJS');
+        showError('Проверь подключение к интернету и перезагрузи страницу.');
+        networkStarting = false;
+        return;
     }
 
-    // Включаем подключение
+    // Код комнаты хранится в адресе после #.
+    roomCode = window.location.hash.slice(1)
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .slice(0, 20);
+
+    if (!roomCode) {
+        roomCode = 'r' + Math.floor(1000 + Math.random() * 9000);
+        history.replaceState(
+            null,
+            '',
+            window.location.pathname + window.location.search + '#' + roomCode
+        );
+    }
+
+    const hostId = 'cozyroom' + roomCode;
+
+    setRoomStatus('Подключение к онлайн-комнате...');
+
+    // Сначала пытаемся создать комнату с постоянным ID.
+    // Если этот ID уже занят, становимся гостем.
+    const hostPeer = new Peer(hostId);
+
+    let decided = false;
+
+    hostPeer.on('open', id => {
+        if (decided) return;
+        decided = true;
+
+        peer = hostPeer;
+        localPlayer.id = id;
+        isHost = true;
+        networkReady = true;
+        networkStarting = false;
+
+        setRoomStatus('Комната создана • Код: ' + roomCode);
+        console.log('Комната создана:', roomCode);
+        updatePlayerCount();
+
+        setupPeerEvents();
+    });
+
+    hostPeer.on('error', error => {
+        if (decided) {
+            console.error('PeerJS:', error);
+            setRoomStatus('Ошибка соединения');
+            return;
+        }
+
+        // Чаще всего ID уже используется хозяином комнаты.
+        if (
+            error.type === 'unavailable-id' ||
+            error.type === 'server-error'
+        ) {
+            decided = true;
+
+            try {
+                hostPeer.destroy();
+            } catch (_) {}
+
+            becomeGuest(hostId);
+        } else {
+            decided = true;
+
+            try {
+                hostPeer.destroy();
+            } catch (_) {}
+
+            becomeGuest(hostId);
+        }
+    });
+}
+
+function becomeGuest(hostId) {
+    setRoomStatus('Поиск хозяина комнаты...');
+
     peer = new Peer();
 
     peer.on('open', id => {
-      console.log('Мой Peer ID:', id);
+        localPlayer.id = id;
+        isHost = false;
+        networkReady = true;
+        networkStarting = false;
 
-      // Соединяемся с постоянным ведомым узлом комнаты (Host Peer ID)
-      const hostPeerId = 'rpg-host-' + roomCode;
+        const conn = peer.connect(hostId, {
+            reliable: true
+        });
 
-      if (id !== hostPeerId) {
-        // Пробуем подключиться к хосту комнаты
-        const conn = peer.connect(hostPeerId);
         setupConnection(conn);
 
-        // Если хоста нет, регистрируем себя как хост
-        conn.on('error', () => {
-          registerAsHost(roomCode);
+        conn.on('open', () => {
+            setRoomStatus('Подключено к комнате');
+            conn.send({
+                type: 'join',
+                player: getPublicPlayer()
+            });
         });
-      }
+
+        conn.on('error', error => {
+            console.error('Ошибка подключения к хозяину:', error);
+            setRoomStatus('Не удалось подключиться к хозяину');
+        });
     });
 
+    setupPeerEvents();
+}
+
+function setupPeerEvents() {
     peer.on('connection', conn => {
-      setupConnection(conn);
+        if (isHost) {
+            setupConnection(conn);
+        }
     });
 
-    function setupConnection(conn) {
-      conn.on('open', () => {
-        connections[conn.peer] = conn;
+    peer.on('call', call => {
+        // Принимаем голосовой звонок.
+        call.answer(localAudioStream || undefined);
+        handleAudioCall(call);
+    });
 
-        // Передаем информацию о себе
-        conn.send({
-          type: 'init',
-          player: localPlayer
-        });
-      });
-
-      conn.on('data', data => {
-        if (data.type === 'init') {
-          remotePlayers[conn.peer] = data.player;
-          updatePlayerCount();
-
-          // Ответное рукопожатие
-          conn.send({
-            type: 'init_response',
-            player: localPlayer
-          });
-        } else if (data.type === 'init_response') {
-          remotePlayers[conn.peer] = data.player;
-          updatePlayerCount();
-        } else if (data.type === 'move') {
-          if (remotePlayers[conn.peer]) {
-            remotePlayers[conn.peer].x = data.x;
-            remotePlayers[conn.peer].y = data.y;
-          }
-        } else if (data.type === 'chat') {
-          if (remotePlayers[conn.peer]) {
-            addChatMessage(remotePlayers[conn.peer].name, data.text);
-            showSpeechBubble(remotePlayers[conn.peer], data.text);
-          }
+    peer.on('disconnected', () => {
+        setRoomStatus('Связь с сервером потеряна. Переподключение...');
+        try {
+            peer.reconnect();
+        } catch (error) {
+            console.error(error);
         }
-      });
+    });
 
-      conn.on('close', () => {
-        delete remotePlayers[conn.peer];
-        delete connections[conn.peer];
-        updatePlayerCount();
-      });
-    }
+    peer.on('error', error => {
+        console.error('Ошибка сети:', error);
+    });
+}
 
-    function updatePlayerCount() {
-      document.getElementById('player-count').innerText = Object.keys(remotePlayers).length + 1;
-    }
-
-    window.peerManager = {
-      broadcast: function(data) {
-        Object.values(connections).forEach(conn => {
-          if (conn.open) conn.send(data);
-        });
-      }
+function getPublicPlayer() {
+    return {
+        id: localPlayer.id,
+        name: localPlayer.name,
+        color: localPlayer.color,
+        x: localPlayer.x,
+        y: localPlayer.y,
+        radius: localPlayer.radius,
+        isSpeaking: false
     };
-  }
+}
 
-  requestAnimationFrame(gameLoop);
+function setupConnection(conn) {
+    if (connections[conn.peer]) return;
+
+    connections[conn.peer] = conn;
+
+    conn.on('open', () => {
+        if (isHost) {
+            conn.send({
+                type: 'welcome',
+                players: Object.values(remotePlayers)
+                    .map(player => ({ ...player }))
+                    .concat([getPublicPlayer()])
+            });
+        }
+    });
+
+    conn.on('data', data => {
+        if (!data || typeof data !== 'object') return;
+
+        if (isHost) {
+            if (data.type === 'join') {
+                const player = data.player || {};
+
+                remotePlayers[conn.peer] = {
+                    id: conn.peer,
+                    name: String(player.name || 'Гость').slice(0, 12),
+                    color: /^#[0-9a-f]{6}$/i.test(player.color)
+                        ? player.color : '#ff4757',
+                    x: ROOM_WIDTH / 2,
+                    y: ROOM_HEIGHT / 2 + 50,
+                    radius: 18,
+                    isSpeaking: false
+                };
+
+                // Сообщаем всем участникам о новом игроке.
+                relay({
+                    type: 'player-joined',
+                    player: remotePlayers[conn.peer]
+                }, conn.peer);
+
+                conn.send({
+                    type: 'welcome',
+                    players: Object.values(remotePlayers)
+                        .map(player => ({ ...player }))
+                        .concat([getPublicPlayer()])
+                });
+
+                updatePlayerCount();
+                return;
+            }
+
+            // Хозяин принимает сообщения гостей и рассылает остальным.
+            processNetworkData(data, conn.peer);
+            relay({
+                type: 'player-data',
+                id: conn.peer,
+                data
+            }, conn.peer);
+
+        } else {
+            if (data.type === 'welcome') {
+                remotePlayers && Object.keys(remotePlayers).forEach(id => {
+                    delete remotePlayers[id];
+                });
+
+                for (const player of data.players || []) {
+                    if (player.id !== localPlayer.id) {
+                        remotePlayers[player.id] = player;
+                    }
+                }
+
+                updatePlayerCount();
+                setRoomStatus('Вы в комнате • Код: ' + roomCode);
+                return;
+            }
+
+            if (data.type === 'player-joined') {
+                if (data.player && data.player.id !== localPlayer.id) {
+                    remotePlayers[data.player.id] = data.player;
+                    updatePlayerCount();
+                }
+                return;
+            }
+
+            if (data.type === 'player-left') {
+                delete remotePlayers[data.id];
+                updatePlayerCount();
+                return;
+            }
+
+            if (data.type === 'player-data') {
+                processNetworkData(data.data, data.id);
+            }
+        }
+    });
+
+    conn.on('close', () => {
+        delete connections[conn.peer];
+
+        if (remotePlayers[conn.peer]) {
+            delete remotePlayers[conn.peer];
+
+            if (isHost) {
+                relay({
+                    type: 'player-left',
+                    id: conn.peer
+                }, conn.peer);
+            }
+
+            updatePlayerCount();
+        }
+    });
+
+    conn.on('error', error => {
+        console.error('Соединение:', error);
+    });
+}
+
+function processNetworkData(data, senderId) {
+    if (!data || typeof data !== 'object') return;
+
+    const player = remotePlayers[senderId];
+
+    if (data.type === 'move' && player) {
+        if (Number.isFinite(data.x) && Number.isFinite(data.y)) {
+            player.x = Math.max(0, Math.min(ROOM_WIDTH, data.x));
+            player.y = Math.max(0, Math.min(ROOM_HEIGHT, data.y));
+        }
+    }
+
+    if (data.type === 'profile' && player) {
+        player.name = String(data.name || 'Гость').slice(0, 12);
+
+        if (/^#[0-9a-f]{6}$/i.test(data.color)) {
+            player.color = data.color;
+        }
+    }
+
+    if (data.type === 'chat' && player) {
+        const text = String(data.text || '').slice(0, 60);
+
+        if (text) {
+            addChatMessage(player.name, text);
+            showSpeechBubble(player, text);
+        }
+    }
+}
+
+function relay(data, exceptId) {
+    for (const [id, conn] of Object.entries(connections)) {
+        if (id === exceptId) continue;
+
+        if (conn && conn.open) {
+            try {
+                conn.send(data);
+            } catch (error) {
+                console.error('Ошибка передачи данных:', error);
+            }
+        }
+    }
+}
+
+function broadcast(data) {
+    if (!networkReady || !peer) return;
+
+    if (isHost) {
+        // Хозяин передаёт обновления всем гостям.
+        relay(data);
+    } else {
+        // Гость отправляет данные хозяину, который их ретранслирует.
+        const hostConnection = Object.values(connections).find(
+            conn => conn && conn.open
+        );
+
+        if (hostConnection) {
+            try {
+                hostConnection.send(data);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    }
+}
+
+// ==========================================
+// ГОЛОСОВОЙ ЧАТ
+// ==========================================
+
+const micButton = document.getElementById('toggle-mic-btn');
+
+micButton.addEventListener('click', async () => {
+    if (micEnabled) {
+        micEnabled = false;
+
+        if (localAudioStream) {
+            localAudioStream.getAudioTracks().forEach(track => {
+                track.stop();
+            });
+        }
+
+        localAudioStream = null;
+
+        for (const call of activeCalls) {
+            try {
+                call.close();
+            } catch (_) {}
+        }
+
+        activeCalls.clear();
+
+        localPlayer.isSpeaking = false;
+        micButton.classList.remove('active');
+        micButton.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+        micButton.title = 'Включить микрофон';
+
+        broadcast({
+            type: 'profile',
+            name: localPlayer.name,
+            color: localPlayer.color
+        });
+
+        return;
+    }
+
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+        alert(
+            'Микрофон недоступен. Открой игру через HTTPS ' +
+            'и разреши доступ к микрофону.'
+        );
+        return;
+    }
+
+    micButton.disabled = true;
+
+    try {
+        localAudioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            },
+            video: false
+        });
+
+        micEnabled = true;
+        micButton.classList.add('active');
+        micButton.innerHTML = '<i class="fas fa-microphone"></i>';
+        micButton.title = 'Выключить микрофон';
+
+        // Открываем голосовые соединения с известными игроками.
+        for (const playerId of Object.keys(remotePlayers)) {
+            startAudioCall(playerId);
+        }
+
+        localAudioStream.getAudioTracks().forEach(track => {
+            track.addEventListener('ended', () => {
+                if (micEnabled) {
+                    micEnabled = false;
+                    localPlayer.isSpeaking = false;
+                    micButton.classList.remove('active');
+                    micButton.innerHTML =
+                        '<i class="fas fa-microphone-slash"></i>';
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Микрофон:', error);
+
+        alert(
+            error.name === 'NotAllowedError'
+                ? 'Ты запретил доступ к микрофону. Разреши его в настройках браузера.'
+                : 'Не удалось включить микрофон. Проверь подключение и разрешения.'
+        );
+
+    } finally {
+        micButton.disabled = false;
+    }
+});
+
+function startAudioCall(playerId) {
+    if (!peer || !localAudioStream || !micEnabled) return;
+    if (playerId === localPlayer.id) return;
+
+    const key = playerId;
+
+    if (activeCalls.has(key)) return;
+
+    try {
+        const call = peer.call(playerId, localAudioStream);
+
+        if (!call) return;
+
+        activeCalls.add(key);
+        handleAudioCall(call, key);
+
+    } catch (error) {
+        console.error('Не удалось начать голосовой звонок:', error);
+    }
+}
+
+function handleAudioCall(call, key) {
+    call.on('stream', stream => {
+        let audio = document.createElement('audio');
+
+        audio.autoplay = true;
+        audio.playsInline = true;
+        audio.srcObject = stream;
+
+        // Не воспроизводим собственный звук повторно.
+        audio.muted = false;
+
+        document.body.appendChild(audio);
+        activeAudioElements.add(audio);
+
+        const playPromise = audio.play();
+
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(error => {
+                console.warn('Автовоспроизведение звука заблокировано:', error);
+            });
+        }
+
+        stream.getAudioTracks().forEach(track => {
+            track.addEventListener('ended', () => {
+                audio.remove();
+                activeAudioElements.delete(audio);
+            });
+        });
+    });
+
+    call.on('close', () => {
+        if (key) activeCalls.delete(key);
+    });
+
+    call.on('error', error => {
+        console.error('Голосовое соединение:', error);
+        if (key) activeCalls.delete(key);
+    });
+}
+
+// ==========================================
+// КОПИРОВАНИЕ ССЫЛКИ
+// ==========================================
+
+document.getElementById('copy-link-btn').addEventListener('click', async () => {
+    const url = window.location.href;
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url);
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            const success = document.execCommand('copy');
+            textArea.remove();
+
+            if (!success) throw new Error('Не удалось скопировать');
+        }
+
+        setRoomStatus('Ссылка скопирована!');
+        alert('Ссылка скопирована! Отправь её другу.');
+
+    } catch (error) {
+        console.error(error);
+        prompt('Скопируй ссылку на комнату:', url);
+    }
+});
+
+// ==========================================
+// ЗАВЕРШЕНИЕ
+// ==========================================
+
+window.addEventListener('beforeunload', () => {
+    cancelAnimationFrame(animationFrame);
+
+    if (localAudioStream) {
+        localAudioStream.getTracks().forEach(track => track.stop());
+    }
+
+    if (peer) {
+        try {
+            peer.destroy();
+        } catch (_) {}
+    }
+});
+
+// Игра не запускает цикл до нажатия «Войти в комнату».
+resizeCanvas();
+render();
 </script>
 </body>
 </html>
